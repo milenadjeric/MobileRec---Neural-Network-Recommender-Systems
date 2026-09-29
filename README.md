@@ -10,6 +10,16 @@ The project covers data preparation, sparse interaction modeling, PyTorch traini
 
 [Results](#results) · [Evaluation protocol](#evaluation-protocol) · [Notebooks](#notebook-guide) · [Run locally](#run-locally)
 
+## What is in this repository?
+
+This repository contains **seven Jupyter notebooks** and this README. The notebooks are located directly in the repository root and cover the complete workflow, from exploring the raw dataset to comparing trained recommendation models.
+
+- **For a quick review:** browse the notebook explanations, saved tables, and plots directly on GitHub. Start with [extended evaluation](07_mobilerec_extended_evaluation.ipynb) for the model comparison, or [data analysis](01_mobilerec_data_analysis_and_preparation.ipynb) for the dataset exploration.
+- **To reproduce the experiments:** run notebooks **01 through 07** in order. The first notebook downloads the source data, and subsequent notebooks build on locally generated files.
+- **Not included:** downloaded datasets, prepared Parquet files, sparse matrices, trained checkpoints, and exported evaluation files. These are generated locally under `artifacts/`; that folder is not part of the GitHub repository.
+
+Saved notebook outputs can be viewed without downloading the data or training the models. Re-executing the model and evaluation cells requires the preceding preparation and training steps.
+
 ## Data and task
 
 The [MobileRec dataset](https://huggingface.co/datasets/recmeapp/mobilerec) contains app reviews and a separate app-metadata table. Each review is treated as an observed user–app interaction, regardless of its rating.
@@ -30,7 +40,12 @@ Ratings and review text are not used as model inputs. App metadata support explo
 
 ## Evaluation protocol
 
-![Chronological split within each user history, with training-only input for validation and test scoring.](docs/images/evaluation_protocol.png)
+```text
+Each user's interactions, ordered chronologically:
+[ training history ... ] [ validation target ] [ test target ]
+          |                       |                  |
+          +---- model input ------+------------------+
+```
 
 For each user, interactions are ordered by date, with original row order breaking same-day ties. All but the last two interactions form the training history; the second-to-last is the validation target, and the last is the test target.
 
@@ -67,8 +82,7 @@ The experiments were developed on an NVIDIA GeForce RTX 4050 Laptop GPU with 6 G
 
 ## Results
 
-<!-- RESULTS:START -->
-> **Results status: pending rerun verification.** These numbers describe the saved evaluation snapshot; the refreshed run has not yet been confirmed.
+The table below summarizes the **saved output in [notebook 07](07_mobilerec_extended_evaluation.ipynb)**. It describes the recorded experiment, rather than a new reproduction of the full pipeline.
 
 | Model | Test Hit@10 | Test NDCG@10 | Catalog coverage@10 |
 | --- | ---: | ---: | ---: |
@@ -84,31 +98,25 @@ NDCG values are shown on the 0–1 scale; Hit@10 and coverage are percentages.
 - **Best ranking:** ItemKNN leads this snapshot. NeuMF has the highest NDCG@10 among the neural models.
 - **Broadest catalog:** LightGCN recommends 4,433 distinct apps across users' Top-10 lists.
 - **Popularity concentration:** 99.79% of NeuMF recommendation positions belong to the ten most popular training apps.
-<!-- RESULTS:END -->
-
-![Side-by-side comparison of test NDCG at 10 and catalog coverage for all six models.](docs/images/model_comparison.png)
-
 Catalog coverage is the fraction of candidate apps appearing in at least one user's Top-10 list. It measures breadth across users, not whether those recommendations are relevant.
 
-The table and chart come from the same [saved results snapshot](docs/results/overview.csv). Additional coverage statistics are available in [catalog.csv](docs/results/catalog.csv), with source hashes and status in [provenance.json](docs/results/provenance.json).
+Comparison plots, training curves, and breakdowns by user history, target popularity, and app category are available inside notebook 07. The exported CSV files and checkpoints are local artifacts, not separate files included in this repository.
 
 ## Notebook guide
 
-Run the main notebooks in this order. Each stage saves artifacts needed by the next.
+Run the notebooks in this order, with the repository root as the working directory. Each stage saves artifacts needed by later stages.
 
 | Step | Notebook | Purpose |
 | --- | --- | --- |
-| 1 | [Data analysis and preparation](700k%20test/01_mobilerec_data_analysis_and_preparation.ipynb) | Inspect interactions and metadata; save prepared Parquet files |
-| 2 | [Chronological split](700k%20test/02_mobilerec_chronological_data_split.ipynb) | Build train/validation/test sets, mappings, and popularity counts |
-| 3 | [Baselines](700k%20test/03_mobilerec_popularity_and_itemknn_baselines.ipynb) | Create the sparse matrix; evaluate Popularity and tune ItemKNN |
-| 4 | [Autoencoders](700k%20test/04_mobilerec_autorec_and_multivae.ipynb) | Train and tune AutoRec and MultiVAE |
-| 5 | [NeuMF](700k%20test/05_mobilerec_neumf.ipynb) | Train and tune the GMF–MLP model |
-| 6 | [LightGCN](700k%20test/06_mobilerec_lightgcn.ipynb) | Train and tune the optimized graph model |
-| 7 | [Extended evaluation](700k%20test/07_mobilerec_extended_evaluation.ipynb) | Reload checkpoints and compare ranking, user groups, and coverage |
+| 1 | [Data analysis and preparation](01_mobilerec_data_analysis_and_preparation.ipynb) | Inspect interactions and metadata; save prepared Parquet files |
+| 2 | [Chronological split](02_mobilerec_chronological_data_split.ipynb) | Build train/validation/test sets, mappings, and popularity counts |
+| 3 | [Baselines](03_mobilerec_popularity_and_itemknn_baselines.ipynb) | Create the sparse matrix; evaluate Popularity and tune ItemKNN |
+| 4 | [Autoencoders](04_mobilerec_autorec_and_multivae.ipynb) | Train and tune AutoRec and MultiVAE |
+| 5 | [NeuMF](05_mobilerec_neumf.ipynb) | Train and tune the GMF–MLP model |
+| 6 | [LightGCN](06_mobilerec_lightgcn.ipynb) | Train and tune the optimized graph model |
+| 7 | [Extended evaluation](07_mobilerec_extended_evaluation.ipynb) | Reload checkpoints and compare ranking, user groups, and coverage |
 
-Two additional notebooks preserve development versions: `00_mobilerec_lightgcn_pre_optimization.ipynb` and `05a_mobilerec_neumf_development.ipynb`. They are **not extra pipeline steps**. They use some of the same output locations as the main notebooks; do not run them as part of the main sequence.
-
-Markdown explanations, printed messages, and figure labels are in English. Some code comments remain in Serbian.
+The notebooks contain English explanations and saved outputs. Some code comments or outputs retained from earlier runs may still be in Serbian.
 
 ## Run locally
 
@@ -127,10 +135,9 @@ python -m ipykernel install --user --name mobilerec --display-name "Python (mobi
 
 Install PyTorch using the command for your operating system and compute platform from the [official installation selector](https://pytorch.org/get-started/locally/). The full neural experiments were run with CUDA; although the notebooks select CPU when CUDA is unavailable, full-scale CPU training has not been benchmarked here.
 
-From the project directory containing this README:
+From the cloned repository directory containing this README and the seven notebooks:
 
 ```shell
-cd "700k test"
 jupyter notebook
 ```
 
@@ -147,25 +154,21 @@ interactions = load_dataset("recmeapp/mobilerec", data_dir="interactions")
 metadata = load_dataset("recmeapp/mobilerec", data_dir="app_meta")
 ```
 
-Allow several GB of disk space for the download cache, prepared data, temporary files, sparse matrices, and checkpoints. Paths in the notebooks are relative to `700k test`, with generated files written under `artifacts/`.
+Allow several GB of disk space for the download cache, prepared data, temporary files, sparse matrices, and checkpoints. Paths in the notebooks are relative to the repository root, with generated files written under `artifacts/`.
 
-Existing preparation and split files may be reused rather than rebuilt. Notebook 7 also caches per-user evaluation results: set **`force_recompute = True`** after retraining or changing the evaluation inputs, then run the complete evaluation notebook. Check its comparison against the saved model results before refreshing this README.
+The local outputs are organized as follows:
 
-### Refresh the README figures
+| Local folder under `artifacts/` | Generated by | Contents |
+| --- | --- | --- |
+| `final/` | Notebook 01 | Prepared interactions and app metadata |
+| `split_all_users/` | Notebook 02 | Chronological splits, ID mappings, and popularity counts |
+| `baselines_all_users/` | Notebook 03 | Sparse interaction matrix, ItemKNN neighbors, and baseline results |
+| `autoencoders_all_users/` | Notebook 04 | AutoRec and MultiVAE checkpoints, histories, and results |
+| `neumf_all_users/` | Notebook 05 | NeuMF checkpoint, training history, and results |
+| `lightgcn_all_users/` | Notebook 06 | LightGCN checkpoint, training history, and results |
+| `extended_evaluation_all_users/` | Notebook 07 | Detailed metrics and final comparison tables |
 
-From the directory containing this README:
-
-```shell
-python scripts/build_readme_assets.py --refresh-source
-```
-
-This copies the small evaluation CSVs into `docs/results/`, records their hashes, and rebuilds the results table and both figures without loading or training models. The default output remains labeled as pending rerun verification. After the rerun and consistency checks have been completed, use:
-
-```shell
-python scripts/build_readme_assets.py --refresh-source --confirmed
-```
-
-To regenerate figures from the existing documentation snapshot, run the script without arguments.
+These folders are created during local execution and are **not included in a fresh clone**. Existing preparation and split files may be reused rather than rebuilt. Notebook 07 also caches per-user evaluation results: set **`force_recompute = True`** after retraining or changing the evaluation inputs, then run the complete evaluation notebook. Check its consistency comparison before updating the results reported here.
 
 ## Limitations and next experiments
 
