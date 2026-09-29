@@ -1,8 +1,8 @@
 # MobileRec: Neural Networks for Mobile App Recommendation
 
-An end-to-end recommender systems study comparing **four neural architectures** with **two non-neural baselines** on **19.3 million Google Play reviews**.
+A recommender systems study comparing **four neural architectures** with **two non-neural baselines** on **19.3 million Google Play reviews**.
 
-Developed by **Milena Đerić** for the bachelor's thesis *Application of Neural Networks in Recommender Systems*, Faculty of Organizational Sciences, University of Belgrade.
+Developed for the bachelor's thesis *Application of Neural Networks in Recommender Systems*, Faculty of Organizational Sciences, University of Belgrade.
 
 **Research question:** Can neural models improve next-app ranking over popularity and item similarity when all models learn from the same implicit interactions?
 
